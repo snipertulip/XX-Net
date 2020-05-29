@@ -1,0 +1,11 @@
+{
+  "GAE_APPIDS": [
+    "hehuachi001",
+    "hehuachi002",
+    "hehuachi003",
+    "hehuachi004",
+    "hehuachi005"
+  ],
+  "https_keep_alive": 15,
+  "connect_receive_buffer": 262144
+}
