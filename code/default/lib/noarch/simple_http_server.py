@@ -328,7 +328,7 @@ class HttpServerHandler():
         self.wfile.write(b'HTTP/1.1 %d\r\n' % code)
         self.wfile.write(b'Connection: close\r\n\r\n')
         if message:
-            self.wfile.write(message)
+            self.wfile.write(utils.to_bytes(message))
 
     def send_response(self, mimetype=b"", content=b"", headers=b"", status=200):
         data = []
@@ -414,7 +414,7 @@ class HttpServerHandler():
 
 
 class HTTPServer():
-    def __init__(self, address, handler, args=(), use_https=False, cert="", logger=xlog):
+    def __init__(self, address, handler, args=(), use_https=False, cert="", logger=xlog, max_thread=1024):
         self.sockets = []
         self.running = True
         if isinstance(address, tuple):
@@ -428,6 +428,7 @@ class HTTPServer():
         self.use_https = use_https
         self.cert = cert
         self.init_socket()
+        self.max_thread = max_thread
         #self.logger.info("server %s:%d started.", address[0], address[1])
 
     def start(self):
@@ -563,6 +564,11 @@ class HTTPServer():
 
     def process_connect(self, sock, address):
         #self.logger.debug("connect from %s:%d", address[0], address[1])
+        if threading.activeCount() > self.max_thread:
+            self.logger.warn("thread num exceed the limit. drop request from %s.", address)
+            sock.close()
+            return
+
         client_obj = self.handler(sock, address, self.args)
         client_thread = threading.Thread(target=client_obj.handle)
         client_thread.start()
