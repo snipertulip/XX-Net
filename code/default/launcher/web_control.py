@@ -21,6 +21,7 @@ root_path = os.path.abspath(os.path.join(current_path, os.pardir))
 import json
 import cgi
 
+import sys_platform
 from xlog import getLogger
 xlog = getLogger("launcher")
 import module_init
@@ -186,8 +187,7 @@ class Http_Handler(simple_http_server.HttpServerHandler):
                 self.req_init_module_handler()
             elif url_path == '/quit':
                 self.send_response('text/html', '{"status":"success"}')
-                module_init.stop_all()
-                os._exit(0)
+                sys_platform.sys_tray.on_quit(None)
             elif url_path == "/debug":
                 self.req_debug_handler()
             elif url_path == '/restart':
@@ -347,19 +347,18 @@ class Http_Handler(simple_http_server.HttpServerHandler):
                             "ip": "127.0.0.1"
                         })
 
-                    data = '{"res":"success"}'
+                    config.allow_remote_connect = allow_remote_switch
+                    config.save()
 
                     xlog.debug("restart web control.")
                     stop()
                     module_init.stop_all()
                     time.sleep(1)
-                    start()
+                    start(allow_remote_switch)
                     module_init.start_all_auto()
 
-                    config.allow_remote_connect = allow_remote_switch
-                    config.save()
-
                     xlog.debug("launcher web control restarted.")
+                    data = '{"res":"success"}'
             elif 'show_systray' in reqs:
                 show_systray = int(reqs['show_systray'][0])
                 if show_systray != 0 and show_systray != 1:
@@ -706,6 +705,8 @@ def test_proxy(type, host, port, user, passwd):
 
 
 server = None
+
+
 def start(allow_remote=0):
     global server
     # should use config.yaml to bind ip
